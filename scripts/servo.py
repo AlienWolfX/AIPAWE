@@ -1,24 +1,37 @@
-# We imports the GPIO module
-import RPi.GPIO as GPIO
-# We import the command sleep from time
+from gpiozero import AngularServo
+
 from time import sleep
 
-# Stops all warnings from appearing
-GPIO.setwarnings(False)
+# Create an AngularServo object with the specified GPIO pin,
 
-# We name all the pins on BOARD mode
-GPIO.setmode(GPIO.BOARD)
-# Set an output for the PWM Signal
-GPIO.setup(11, GPIO.OUT)
+# minimum pulse width, and maximum pulse width
 
-# Set up the PWM on pin #11 at 50Hz
-pwm = GPIO.PWM(11, 50)
-pwm.start(0) # Start the servo with 0 duty cycle ( at 0 deg position )
-pwm.ChangeDutyCycle(5) # Tells the servo to turn to the left ( -90 deg position )
-sleep(0.5) # Tells the servo to Delay for 5sec
-pwm.ChangeDutyCycle(7.5) # Tells the servo to turn to the neutral position ( at 0 deg position )
-sleep(0.5) # Tells the servo to Delay for 5sec
-pwm.ChangeDutyCycle(10) # Tells the servo to turn to the right ( +90 deg position )
-sleep(0.5) # Tells the servo to Delay for 5sec
-pwm.stop(0) # Stop the servo with 0 duty cycle ( at 0 deg position )
-GPIO.cleanup() # Clean up all the ports we've used.
+servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
+
+try:
+
+   while True:
+
+       # Set the servo angle to 90 degrees
+
+       servo.angle = 90
+
+       sleep(1)  # Delay for 1 second
+
+       # Set the servo angle to 0 degrees
+
+       servo.angle = 0
+
+       sleep(1)  # Delay for 1 second
+
+       # Set the servo angle to -90 degrees
+
+       servo.angle = -90
+
+       sleep(1)  # Delay for 1 second
+
+finally:
+
+   # Set the servo angle to 0 degrees before exiting
+
+   servo.angle = 0

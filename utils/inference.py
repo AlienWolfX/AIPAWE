@@ -19,7 +19,7 @@ def _model_path() -> Path:
     return repo_root / "model" / "weights" / "v1.pt"
 
 
-def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] = None, show_preview: bool = False):In
+def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] = None, show_preview: bool = False):
     model_path = _model_path()
     if not model_path.exists():
         raise FileNotFoundError(f"Model not found at {model_path}. Place v1.pt there.")

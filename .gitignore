@@ -1,6 +1,7 @@
 # Folders
 
-model/*
+utils/__pycache__/*
+.venv/*
 
 # Files
 

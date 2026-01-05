@@ -1,3 +1,5 @@
+# Copyright Allen Cruiz 
+
 from utils.inference import infer_camera
 
 

@@ -26,6 +26,9 @@ def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] 
 
     device = _select_device()
     model = YOLO(str(model_path))
+    
+    if hasattr(model, 'model') and hasattr(model.model, 'names'):
+        model.model.names = {0: 'fire'}
 
     cv2 = None
     if show_preview:

@@ -9,13 +9,12 @@ Fires spreading in urban areas are common, especially in residential neighborhoo
 
 ## Roadmap
 
-[] - Audio
-[x] - Inference
-[x] - Servo
-[] - SMS/GSM
-[] - Stepper
+- [ ] Audio
+- [x] Inference
+- [x] Servo
+- [ ] SMS/GSM
+- [ ] Stepper
 
 ## Contact
 
 Email: cruizallen2@gmail.com
-

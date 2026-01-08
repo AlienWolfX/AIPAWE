@@ -19,7 +19,7 @@ def _model_path() -> Path:
     return repo_root / "model" / "weights" / "v1.pt"
 
 
-def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] = None, show_preview: bool = False):
+def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] = None, show_preview: bool = False, system_status: dict = None):
     model_path = _model_path()
     if not model_path.exists():
         raise FileNotFoundError(f"Model not found at {model_path}. Place v1.pt there.")
@@ -59,10 +59,19 @@ def infer_camera(imgsz: int = 640, conf: float = 0.25, save_dir: Optional[Path] 
                 cv2.imwrite(str(out_path), annotated)
 
             if show_preview and annotated is not None and cv2 is not None:
-                cv2.imshow('YOLO Preview - Color', annotated)
+                if system_status:
+                    y_offset = 30
+                    for module, state in system_status.items():
+                        if module == 'sim800l_imei':
+                            continue
+                        color = (0, 255, 0) if state else (0, 0, 255) 
+                        symbol = "[OK]" if state else "[FAIL]"
+                        text = f"{symbol} {module.upper()}"
+                        cv2.putText(annotated, text, (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
+                                    0.6, color, 2, cv2.LINE_AA)
+                        y_offset += 25
                 
-                gray = cv2.cvtColor(annotated, cv2.COLOR_BGR2GRAY)
-                cv2.imshow('YOLO Preview - B&W', gray)
+                cv2.imshow('Main', annotated)
                 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     print('Preview closed by user.')

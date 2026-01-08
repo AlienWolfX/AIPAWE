@@ -1,55 +1,79 @@
 from utils.inference import infer_camera
-from utils.servo import PCA9685ServoController
-import time
+from utils.sim800l import init_sim800l, get_imei
 
-
-def test_servos():
-	"""Test servo motors on channels 0 to 3"""
-	print("Initializing PCA9685 servo controller...")
-	servo = PCA9685ServoController(channels=16)
+def check_system_status():
+	"""Check all module statuses before starting main program"""
+	status = {
+		'sim800l': False,
+		'sim800l_imei': None,
+		'audio': False,
+		'servo': False,
+		'stepper': False,
+		'camera': False
+	}
 	
+	print("\n=== System Status Check ===")
+	
+	print("Checking SIM800L...")
+	ser = init_sim800l()
+	if ser:
+		imei = get_imei(ser)
+		if imei:
+			status['sim800l'] = True
+			status['sim800l_imei'] = imei
+			print(f"✓ SIM800L OK (IMEI: {imei})")
+		else:
+			print("✗ SIM800L: No IMEI")
+		ser.close()
+	else:
+		print("✗ SIM800L: Failed")
+	
+	print("Checking Audio...")
 	try:
-		print("\nMoving servos 0-3 in sequence...")
-		
-		for channel in range(4):
-			print(f"\n--- Testing Servo {channel} ---")
-			
-			print(f"Servo {channel}: Moving to 0°")
-			servo.set_angle(channel, 0)
-			time.sleep(1)
-			
-			print(f"Servo {channel}: Moving to 90°")
-			servo.set_angle(channel, 90)
-			time.sleep(1)
-			
-			print(f"Servo {channel}: Moving to 180°")
-			servo.set_angle(channel, 180)
-			time.sleep(1)
-			
-			print(f"Servo {channel}: Returning to center (90°)")
-			servo.set_angle(channel, 90)
-			time.sleep(1)
-		
-		print("\n✓ All servos tested successfully")
-		
-	except KeyboardInterrupt:
-		print("\nStopped by user")
+		from utils.audio import test_audio
+		test_audio()
+		status['audio'] = True
+		print("✓ Audio OK")
 	except Exception as e:
-		print(f"Error: {e}")
-	finally:
-		print("\nCentering and disabling all servos...")
-		for channel in range(4):
-			servo.set_angle(channel, 90)
-		time.sleep(0.5)
+		print(f"✗ Audio: {e}")
+	
+	print("Checking Servo...")
+	try:
+		from utils.servo import PCA9685ServoController
+		servo = PCA9685ServoController(channels=16)
 		servo.disable_all()
 		servo.deinit()
-		print("Servos disabled and cleaned up")
+		status['servo'] = True
+		print("✓ Servo OK")
+	except Exception as e:
+		print(f"✗ Servo: {e}")
+	
+	print("Checking Stepper...")
+	try:
+		from utils.stepper import A4988Stepper
+		stepper = A4988Stepper()
+		stepper.cleanup()
+		status['stepper'] = True
+		print("✓ Stepper OK")
+	except Exception as e:
+		print(f"✗ Stepper: {e}")
+	
+	status['camera'] = True 
+	
+	print("\n=== Status Summary ===")
+	for module, state in status.items():
+		if module != 'sim800l_imei':
+			symbol = "✓" if state else "✗"
+			print(f"{symbol} {module.upper()}: {'OK' if state else 'FAILED'}")
+	print("========================\n")
+	
+	return status
 
 
 def main():
-	# test_servos()
+	status = check_system_status()
 	
-	infer_camera(imgsz=320, conf=0.25, show_preview=True)
+	infer_camera(imgsz=320, conf=0.25, show_preview=True, system_status=status)
 
 
 if __name__ == "__main__":

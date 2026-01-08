@@ -4,7 +4,6 @@ import wave
 import time
 import math
 
-
 class TPA3116D2Audio:
     
     def __init__(self, sample_rate=44100, channels=2, device_index=None):

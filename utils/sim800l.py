@@ -6,7 +6,7 @@ def init_sim800l(port=None, baudrate=9600, timeout=1):
 	"""Initialize SIM800L module"""
 	if port is None:
 		if platform.system() == 'Windows':
-			port = 'COM8' 
+			port = 'COM8' # Change
 		else:
 			port = '/dev/ttyAMA0' 
 	

@@ -3,7 +3,7 @@ import time
 
 class A4988Stepper:
 
-    def __init__(self, step_pin=24, dir_pin=23, enable_pin=None, ms1_pin=None, ms2_pin=None, ms3_pin=None):
+    def __init__(self, step_pin=None, dir_pin=None, enable_pin=None, ms1_pin=None, ms2_pin=None, ms3_pin=None):
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.enable_pin = enable_pin

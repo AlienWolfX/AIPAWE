@@ -34,6 +34,9 @@ class RobotArm:
         self.WRIST_SERVO_1 = 2  
         self.WRIST_SERVO_2 = 3  
         
+        self.elbow_servos_mirrored = True 
+        self.wrist_servos_mirrored = True 
+        
         self.shoulder_angle = 0  
         self.elbow_angle_1 = 90
         self.elbow_angle_2 = 90
@@ -58,7 +61,7 @@ class RobotArm:
         self.wrist_angle_2 = 90
         
         time.sleep(1)
-        print("Home position reached")
+        print(f"Home position reached (Elbow: {'mirrored' if self.elbow_servos_mirrored else 'parallel'}, Wrist: {'mirrored' if self.wrist_servos_mirrored else 'parallel'})")
     
     def rotate_shoulder(self, degrees, clockwise=True, speed=0.015):
         """
@@ -111,10 +114,14 @@ class RobotArm:
         
         Args:
             angle1: Angle for elbow servo 1 (0-180)
-            angle2: Angle for elbow servo 2 (0-180), defaults to angle1
+            angle2: Angle for elbow servo 2 (0-180), if None and servos are mirrored,
+                   it will be automatically calculated as (180 - angle1)
         """
         if angle2 is None:
-            angle2 = angle1
+            if self.elbow_servos_mirrored:
+                angle2 = 180 - angle1
+            else:
+                angle2 = angle1
         
         self.servo_controller.set_angle(self.ELBOW_SERVO_1, angle1)
         self.servo_controller.set_angle(self.ELBOW_SERVO_2, angle2)
@@ -122,7 +129,7 @@ class RobotArm:
         self.elbow_angle_1 = angle1
         self.elbow_angle_2 = angle2
         
-        print(f"Elbow position: [{angle1}°, {angle2}°]")
+        print(f"Elbow position: Servo1={angle1}°, Servo2={angle2}° {'(mirrored)' if self.elbow_servos_mirrored and angle2 == 180 - angle1 else ''}")
     
     def set_wrist_position(self, camera_angle, speaker_angle=None):
         """
@@ -130,10 +137,14 @@ class RobotArm:
         
         Args:
             camera_angle: Tilt angle for camera (0-180)
-            speaker_angle: Tilt angle for speaker (0-180), defaults to camera_angle
+            speaker_angle: Tilt angle for speaker (0-180), if None and servos are mirrored,
+                          it will be automatically calculated as (180 - camera_angle)
         """
         if speaker_angle is None:
-            speaker_angle = camera_angle
+            if self.wrist_servos_mirrored:
+                speaker_angle = 180 - camera_angle
+            else:
+                speaker_angle = camera_angle
         
         self.servo_controller.set_angle(self.WRIST_SERVO_1, camera_angle)
         self.servo_controller.set_angle(self.WRIST_SERVO_2, speaker_angle)
@@ -141,7 +152,7 @@ class RobotArm:
         self.wrist_angle_1 = camera_angle
         self.wrist_angle_2 = speaker_angle
         
-        print(f"Wrist position: Camera={camera_angle}°, Speaker={speaker_angle}°")
+        print(f"Wrist position: Camera={camera_angle}°, Speaker={speaker_angle}° {'(mirrored)' if self.wrist_servos_mirrored and speaker_angle == 180 - camera_angle else ''}")
     
     def point_at_target(self, shoulder_angle, elbow_angle, wrist_angle):
         """

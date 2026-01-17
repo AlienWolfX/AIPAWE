@@ -7,8 +7,22 @@ import time
 
 
 class PCA9685ServoController:
+    """
+    PCA9685 16-Channel PWM Servo Controller.
+    
+    Controls up to 16 servo motors using I2C communication.
+    Supports both ServoKit and manual PCA9685 control methods.
+    """
     
     def __init__(self, channels=16, i2c_address=0x40, frequency=50):
+        """
+        Initialize PCA9685 servo controller.
+        
+        Args:
+            channels: Number of channels (default: 16)
+            i2c_address: I2C address of PCA9685 (default: 0x40)
+            frequency: PWM frequency in Hz (default: 50 for servos)
+        """
         try:
             self.kit = ServoKit(channels=channels, address=i2c_address, frequency=frequency)
             self.channels = channels
@@ -29,10 +43,19 @@ class PCA9685ServoController:
             except Exception as e2:
                 raise RuntimeError(f"Failed to initialize PCA9685: {e2}")
     
+    
     def set_angle(self, channel, angle):
+        """
+        Set servo angle.
+        
+        Args:
+            channel: Servo channel (0-15)
+            angle: Target angle (0-180 degrees)
+        """
         if channel >= self.channels:
             raise ValueError(f"Channel {channel} out of range (0-{self.channels-1})")
         
+        # Clamp angle to valid range
         angle = max(0, min(180, angle))
         
         if self.using_servokit:
@@ -81,20 +104,25 @@ class PCA9685ServoController:
                 self.set_angle(channel, angle)
                 time.sleep(delay)
     
+    
     def center(self, channel):
+        """Center servo to 90 degrees."""
         self.set_angle(channel, 90)
     
     def disable(self, channel):
+        """Disable PWM signal on channel."""
         if self.using_servokit:
             self.kit._pca.channels[channel].duty_cycle = 0
         else:
             self.pca.channels[channel].duty_cycle = 0
     
     def disable_all(self):
+        """Disable all servo channels."""
         for channel in range(self.channels):
             self.disable(channel)
     
     def deinit(self):
+        """Deinitialize controller and release resources."""
         self.disable_all()
         if not self.using_servokit and hasattr(self, 'pca'):
             self.pca.deinit()

@@ -2,15 +2,30 @@ import RPi.GPIO as GPIO
 import time
 
 class A4988Stepper:
-
-    def __init__(self, step_pin=None, dir_pin=None, enable_pin=None, ms1_pin=None, ms2_pin=None, ms3_pin=None):
+    """
+    A4988 Stepper Motor Driver Controller.
+    
+    Controls stepper motors via A4988 driver with support for microstepping.
+    """
+    
+    def __init__(self, step_pin=24, dir_pin=23, enable_pin=25, 
+                 ms1_pin=17, ms2_pin=22, ms3_pin=27):
+        """
+        Initialize A4988 stepper motor driver.
+        
+        Args:
+            step_pin: GPIO pin for step signal
+            dir_pin: GPIO pin for direction signal
+            enable_pin: GPIO pin for enable signal
+            ms1_pin, ms2_pin, ms3_pin: GPIO pins for microstepping configuration
+        """
         self.step_pin = step_pin
         self.dir_pin = dir_pin
         self.enable_pin = enable_pin
         self.ms1_pin = ms1_pin
         self.ms2_pin = ms2_pin
         self.ms3_pin = ms3_pin
-        self.microstep_multiplier = 1  
+        self.microstep_multiplier = 1
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -37,7 +52,12 @@ class A4988Stepper:
             GPIO.output(self.ms3_pin, GPIO.LOW)
     
     def set_microstepping(self, mode='1/16'):
-        """Set microstepping mode. Options: 'full', '1/2', '1/4', '1/8', '1/16'"""
+        """
+        Set microstepping mode for smoother operation.
+        
+        Args:
+            mode: Microstepping mode ('full', '1/2', '1/4', '1/8', '1/16')
+        """
         modes = {
             'full': (False, False, False, 1),
             '1/2': (True, False, False, 2),
@@ -52,43 +72,64 @@ class A4988Stepper:
         ms1, ms2, ms3, multiplier = modes[mode]
         self.microstep_multiplier = multiplier
         
-        if self.ms1_pin is not None:
-            GPIO.output(self.ms1_pin, GPIO.HIGH if ms1 else GPIO.LOW)
-        if self.ms2_pin is not None:
-            GPIO.output(self.ms2_pin, GPIO.HIGH if ms2 else GPIO.LOW)
-        if self.ms3_pin is not None:
-            GPIO.output(self.ms3_pin, GPIO.HIGH if ms3 else GPIO.LOW)
+        # Set microstepping pins
+        for pin, value in [(self.ms1_pin, ms1), (self.ms2_pin, ms2), (self.ms3_pin, ms3)]:
+            if pin is not None:
+                GPIO.output(pin, GPIO.HIGH if value else GPIO.LOW)
     
     def set_direction(self, clockwise=True):
+        """Set rotation direction."""
         GPIO.output(self.dir_pin, GPIO.HIGH if clockwise else GPIO.LOW)
     
     def step(self, delay=0.001):
+        """Execute a single step."""
         GPIO.output(self.step_pin, GPIO.HIGH)
         time.sleep(delay)
         GPIO.output(self.step_pin, GPIO.LOW)
         time.sleep(delay)
     
     def rotate(self, steps, clockwise=True, delay=0.001):
+        """
+        Rotate a specific number of steps.
+        
+        Args:
+            steps: Number of steps to rotate
+            clockwise: Direction of rotation
+            delay: Delay between steps (controls speed)
+        """
         self.set_direction(clockwise)
         for _ in range(abs(steps)):
             self.step(delay)
     
     def rotate_degrees(self, degrees, clockwise=True, delay=0.001, steps_per_rev=200):
+        """
+        Rotate a specific number of degrees.
+        
+        Args:
+            degrees: Degrees to rotate
+            clockwise: Direction of rotation
+            delay: Speed of rotation
+            steps_per_rev: Steps per revolution for your motor (typically 200)
+        """
         steps = int((degrees / 360.0) * steps_per_rev * self.microstep_multiplier)
         self.rotate(steps, clockwise, delay)
     
     def enable(self):
+        """Enable the stepper motor driver."""
         if self.enable_pin is not None:
             GPIO.output(self.enable_pin, GPIO.LOW)
     
     def disable(self):
+        """Disable the stepper motor driver."""
         if self.enable_pin is not None:
             GPIO.output(self.enable_pin, GPIO.HIGH)
     
     def cleanup(self):
-        GPIO.cleanup([self.step_pin, self.dir_pin])
+        """Clean up GPIO resources."""
+        pins_to_cleanup = [self.step_pin, self.dir_pin]
         if self.enable_pin is not None:
-            GPIO.cleanup(self.enable_pin)
+            pins_to_cleanup.append(self.enable_pin)
+        GPIO.cleanup(pins_to_cleanup)
 
 
 if __name__ == "__main__":

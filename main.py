@@ -468,10 +468,11 @@ class FireFightingRobot:
         
         if not ROBOT_ARM_AVAILABLE:
             print("\n⚠ Running in simulation mode (no hardware control)")
-            print("  Robot arm and suppression disabled on Windows")
+            print("  Robot arm and suppression disabled - not on Raspberry Pi")
             print("  Only fire detection will work\n")
-        elif not (self.robot_arm and self.suppression_system):
-            print("\n✗ Critical systems failed. Cannot start robot.")
+        elif not self.robot_arm:
+            print("\n✗ Robot arm failed to initialize. Cannot start robot.")
+            print("  Check servo and stepper connections.")
             return
         
         print("\n" + "="*60)
@@ -481,32 +482,50 @@ class FireFightingRobot:
         
         try:
             while True:
+                print("\n" + "="*60)
+                print("Starting 360° fire scan...")
+                print("="*60)
+                
                 detected_fires = self.idle_scan_mode()
                 
                 if detected_fires:
-                    print(f"\n🎯 Engaging {len(detected_fires)} fire(s) in priority order...")
+                    print(f"\n🎯 {len(detected_fires)} fire(s) detected! Stopping rotation...")
+                    print(f"Engaging fires in priority order...\n")
                     
                     # Engage each fire one at a time, highest confidence first
                     for i, fire in enumerate(detected_fires, 1):
-                        print(f"\n--- Engaging Fire {i}/{len(detected_fires)} ---")
+                        print(f"\n{'='*60}")
+                        print(f" ENGAGING FIRE {i}/{len(detected_fires)} ")
+                        print(f"{'='*60}")
+                        print(f"Target Angle: {fire['angle']:.1f}°")
+                        print(f"Confidence: {fire['confidence']:.1%}")
+                        
                         self.engage_fire(fire['angle'], fire['confidence'])
-                        time.sleep(1)  # Brief pause between fires
+                        
+                        if i < len(detected_fires):
+                            print(f"\nMoving to next fire in 2 seconds...")
+                            time.sleep(2)
                     
-                    print(f"\n✓ All {len(detected_fires)} fire(s) suppressed")
+                    print(f"\n{'='*60}")
+                    print(f" ✓ ALL {len(detected_fires)} FIRE(S) SUPPRESSED ")
+                    print(f"{'='*60}\n")
                     
                     # Clear suppressed fires list after a complete cycle
-                    # (in case fires re-ignite, we'll detect them again)
-                    if len(self.suppressed_fires) > 10:  # Prevent list from growing too large
+                    if len(self.suppressed_fires) > 10:
                         self.suppressed_fires = self.suppressed_fires[-10:]
                     
-                    time.sleep(2)
+                    print("Waiting 5 seconds before next scan...\n")
+                    time.sleep(5)
                 else:
-                    print("No new fires detected. Continuing scan...\n")
+                    print("\n✓ No fires detected in this scan.")
+                    print("  Continuing patrol...\n")
+                    
                     # Clear old suppressed fires after a clean scan
                     if len(self.suppressed_fires) > 0:
                         print(f"  (Cleared {len(self.suppressed_fires)} suppressed fire location(s))")
                         self.suppressed_fires.clear()
-                    time.sleep(1)
+                    
+                    time.sleep(2)
         
         except KeyboardInterrupt:
             print("\n\nShutdown initiated by user...")

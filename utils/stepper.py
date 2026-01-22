@@ -121,7 +121,7 @@ class A4988Stepper:
         else:
             GPIO.output(self.dir_pin, GPIO.HIGH if clockwise else GPIO.LOW)
     
-    def step(self, delay=0.001):
+    def step(self, delay=0.0003):
         """Execute a single step."""
         if GPIO_LIB == 'lgpio':
             lgpio.gpio_write(self.gpio_chip, self.step_pin, 1)
@@ -134,7 +134,7 @@ class A4988Stepper:
             GPIO.output(self.step_pin, GPIO.LOW)
             time.sleep(delay)
     
-    def rotate(self, steps, clockwise=True, delay=0.001):
+    def rotate(self, steps, clockwise=True, delay=0.0003):
         """
         Rotate a specific number of steps.
         
@@ -147,7 +147,7 @@ class A4988Stepper:
         for _ in range(abs(steps)):
             self.step(delay)
     
-    def rotate_degrees(self, degrees, clockwise=True, delay=0.001, steps_per_rev=200):
+    def rotate_degrees(self, degrees, clockwise=True, delay=0.0003, steps_per_rev=200):
         """
         Rotate a specific number of degrees.
         

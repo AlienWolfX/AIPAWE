@@ -147,7 +147,7 @@ class A4988Stepper:
         for _ in range(abs(steps)):
             self.step(delay)
     
-    def rotate_degrees(self, degrees, clockwise=True, delay=0.0001, steps_per_rev=200):
+    def rotate_degrees(self, degrees, clockwise=True, delay=0.0001, steps_per_rev=400):
         """
         Rotate a specific number of degrees.
         
@@ -155,7 +155,7 @@ class A4988Stepper:
             degrees: Degrees to rotate
             clockwise: Direction of rotation
             delay: Speed of rotation
-            steps_per_rev: Steps per revolution for your motor (typically 200)
+            steps_per_rev: Steps per revolution for your motor (200 for 1.8°, 400 for 0.9°)
         """
         steps = int((degrees / 360.0) * steps_per_rev * self.microstep_multiplier)
         self.rotate(steps, clockwise, delay)

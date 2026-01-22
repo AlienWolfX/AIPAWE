@@ -48,6 +48,14 @@ class SMSNotifier:
                 
                 # Set SMS text mode
                 self._send_at_command("AT+CMGF=1")
+                
+                # Get and display IMEI
+                imei = self.get_imei()
+                if imei:
+                    self.logger.info(f"SIM800L IMEI: {imei}")
+                    print(f"SIM800L IMEI: {imei}")
+                else:
+                    self.logger.warning("Could not retrieve IMEI")
             else:
                 self.logger.error("SIM800L not responding")
                 self.serial = None
@@ -174,6 +182,35 @@ class SMSNotifier:
                 
         except Exception as e:
             self.logger.error(f"Signal check error: {e}")
+        
+        return None
+    
+    def get_imei(self) -> Optional[str]:
+        """Get SIM800L IMEI number"""
+        if self.serial is None:
+            return None
+        
+        try:
+            self.serial.write(b'AT+GSN\r\n')
+            time.sleep(0.5)
+            
+            response = self.serial.read(self.serial.in_waiting).decode('utf-8', errors='ignore')
+            
+            # Parse IMEI from response
+            lines = response.strip().split('\n')
+            for line in lines:
+                line = line.strip()
+                # IMEI is 15 digits
+                if line.isdigit() and len(line) == 15:
+                    return line
+            
+            # Alternative: sometimes IMEI comes after AT+GSN
+            for line in lines:
+                if 'AT+GSN' not in line and line.strip().isdigit():
+                    return line.strip()
+                    
+        except Exception as e:
+            self.logger.error(f"IMEI retrieval error: {e}")
         
         return None
     

@@ -8,7 +8,7 @@ stepper:
   enable_pin: 25
   steps_per_revolution: 200  # NEMA17 typical
   microsteps: 16  # A4988 microstep setting
-  rpm: 0.5  # Scanning rotation speed
+  rpm: 0.25  # Scanning rotation speed
   sector_size: 15  # Degrees per scan sector
   acceleration: 500  # Steps/s^2
 

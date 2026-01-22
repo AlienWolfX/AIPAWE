@@ -1,11 +1,25 @@
-import RPi.GPIO as GPIO
 import time
+
+# Try to import GPIO libraries - Raspberry Pi 5 uses lgpio, older models use RPi.GPIO
+try:
+    import lgpio
+    GPIO_LIB = 'lgpio'
+    print("Using lgpio for Raspberry Pi 5")
+except ImportError:
+    try:
+        import RPi.GPIO as GPIO
+        GPIO_LIB = 'RPi.GPIO'
+        print("Using RPi.GPIO for Raspberry Pi 4 or earlier")
+    except ImportError:
+        raise NotImplementedError("No GPIO library available - must run on Raspberry Pi")
+
 
 class A4988Stepper:
     """
     A4988 Stepper Motor Driver Controller.
     
     Controls stepper motors via A4988 driver with support for microstepping.
+    Compatible with both Raspberry Pi 4 (RPi.GPIO) and Raspberry Pi 5 (lgpio).
     """
     
     def __init__(self, step_pin=24, dir_pin=23, enable_pin=25, 
@@ -27,29 +41,49 @@ class A4988Stepper:
         self.ms3_pin = ms3_pin
         self.microstep_multiplier = 1
         
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        
-        GPIO.setup(self.step_pin, GPIO.OUT)
-        GPIO.setup(self.dir_pin, GPIO.OUT)
-        
-        GPIO.output(self.step_pin, GPIO.LOW)
-        GPIO.output(self.dir_pin, GPIO.LOW)
-        
-        if self.enable_pin is not None:
-            GPIO.setup(self.enable_pin, GPIO.OUT)
-            GPIO.output(self.enable_pin, GPIO.HIGH)  
-        
-        # Setup microstepping pins
-        if self.ms1_pin is not None:
-            GPIO.setup(self.ms1_pin, GPIO.OUT)
-            GPIO.output(self.ms1_pin, GPIO.LOW)
-        if self.ms2_pin is not None:
-            GPIO.setup(self.ms2_pin, GPIO.OUT)
-            GPIO.output(self.ms2_pin, GPIO.LOW)
-        if self.ms3_pin is not None:
-            GPIO.setup(self.ms3_pin, GPIO.OUT)
-            GPIO.output(self.ms3_pin, GPIO.LOW)
+        if GPIO_LIB == 'lgpio':
+            # Raspberry Pi 5 using lgpio
+            self.gpio_chip = lgpio.gpiochip_open(4)  # gpiochip4 on Pi 5
+            
+            # Setup output pins
+            lgpio.gpio_claim_output(self.gpio_chip, self.step_pin, 0)
+            lgpio.gpio_claim_output(self.gpio_chip, self.dir_pin, 0)
+            
+            if self.enable_pin is not None:
+                lgpio.gpio_claim_output(self.gpio_chip, self.enable_pin, 1)  # Start disabled (HIGH)
+            
+            # Setup microstepping pins
+            if self.ms1_pin is not None:
+                lgpio.gpio_claim_output(self.gpio_chip, self.ms1_pin, 0)
+            if self.ms2_pin is not None:
+                lgpio.gpio_claim_output(self.gpio_chip, self.ms2_pin, 0)
+            if self.ms3_pin is not None:
+                lgpio.gpio_claim_output(self.gpio_chip, self.ms3_pin, 0)
+        else:
+            # Raspberry Pi 4 or earlier using RPi.GPIO
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setwarnings(False)
+            
+            GPIO.setup(self.step_pin, GPIO.OUT)
+            GPIO.setup(self.dir_pin, GPIO.OUT)
+            
+            GPIO.output(self.step_pin, GPIO.LOW)
+            GPIO.output(self.dir_pin, GPIO.LOW)
+            
+            if self.enable_pin is not None:
+                GPIO.setup(self.enable_pin, GPIO.OUT)
+                GPIO.output(self.enable_pin, GPIO.HIGH)  
+            
+            # Setup microstepping pins
+            if self.ms1_pin is not None:
+                GPIO.setup(self.ms1_pin, GPIO.OUT)
+                GPIO.output(self.ms1_pin, GPIO.LOW)
+            if self.ms2_pin is not None:
+                GPIO.setup(self.ms2_pin, GPIO.OUT)
+                GPIO.output(self.ms2_pin, GPIO.LOW)
+            if self.ms3_pin is not None:
+                GPIO.setup(self.ms3_pin, GPIO.OUT)
+                GPIO.output(self.ms3_pin, GPIO.LOW)
     
     def set_microstepping(self, mode='1/16'):
         """
@@ -75,18 +109,30 @@ class A4988Stepper:
         # Set microstepping pins
         for pin, value in [(self.ms1_pin, ms1), (self.ms2_pin, ms2), (self.ms3_pin, ms3)]:
             if pin is not None:
-                GPIO.output(pin, GPIO.HIGH if value else GPIO.LOW)
+                if GPIO_LIB == 'lgpio':
+                    lgpio.gpio_write(self.gpio_chip, pin, 1 if value else 0)
+                else:
+                    GPIO.output(pin, GPIO.HIGH if value else GPIO.LOW)
     
     def set_direction(self, clockwise=True):
         """Set rotation direction."""
-        GPIO.output(self.dir_pin, GPIO.HIGH if clockwise else GPIO.LOW)
+        if GPIO_LIB == 'lgpio':
+            lgpio.gpio_write(self.gpio_chip, self.dir_pin, 1 if clockwise else 0)
+        else:
+            GPIO.output(self.dir_pin, GPIO.HIGH if clockwise else GPIO.LOW)
     
     def step(self, delay=0.001):
         """Execute a single step."""
-        GPIO.output(self.step_pin, GPIO.HIGH)
-        time.sleep(delay)
-        GPIO.output(self.step_pin, GPIO.LOW)
-        time.sleep(delay)
+        if GPIO_LIB == 'lgpio':
+            lgpio.gpio_write(self.gpio_chip, self.step_pin, 1)
+            time.sleep(delay)
+            lgpio.gpio_write(self.gpio_chip, self.step_pin, 0)
+            time.sleep(delay)
+        else:
+            GPIO.output(self.step_pin, GPIO.HIGH)
+            time.sleep(delay)
+            GPIO.output(self.step_pin, GPIO.LOW)
+            time.sleep(delay)
     
     def rotate(self, steps, clockwise=True, delay=0.001):
         """
@@ -117,19 +163,36 @@ class A4988Stepper:
     def enable(self):
         """Enable the stepper motor driver."""
         if self.enable_pin is not None:
-            GPIO.output(self.enable_pin, GPIO.LOW)
+            if GPIO_LIB == 'lgpio':
+                lgpio.gpio_write(self.gpio_chip, self.enable_pin, 0)
+            else:
+                GPIO.output(self.enable_pin, GPIO.LOW)
     
     def disable(self):
         """Disable the stepper motor driver."""
         if self.enable_pin is not None:
-            GPIO.output(self.enable_pin, GPIO.HIGH)
+            if GPIO_LIB == 'lgpio':
+                lgpio.gpio_write(self.gpio_chip, self.enable_pin, 1)
+            else:
+                GPIO.output(self.enable_pin, GPIO.HIGH)
     
     def cleanup(self):
         """Clean up GPIO resources."""
-        pins_to_cleanup = [self.step_pin, self.dir_pin]
-        if self.enable_pin is not None:
-            pins_to_cleanup.append(self.enable_pin)
-        GPIO.cleanup(pins_to_cleanup)
+        if GPIO_LIB == 'lgpio':
+            # Free all claimed pins
+            for pin in [self.step_pin, self.dir_pin, self.enable_pin, 
+                       self.ms1_pin, self.ms2_pin, self.ms3_pin]:
+                if pin is not None:
+                    try:
+                        lgpio.gpio_free(self.gpio_chip, pin)
+                    except:
+                        pass
+            lgpio.gpiochip_close(self.gpio_chip)
+        else:
+            pins_to_cleanup = [self.step_pin, self.dir_pin]
+            if self.enable_pin is not None:
+                pins_to_cleanup.append(self.enable_pin)
+            GPIO.cleanup(pins_to_cleanup)
 
 
 if __name__ == "__main__":
@@ -137,16 +200,28 @@ if __name__ == "__main__":
     
     try:
         print("Setting all GPIO pins to LOW...")
-        GPIO.output(motor.step_pin, GPIO.LOW)
-        GPIO.output(motor.dir_pin, GPIO.LOW)
-        if motor.enable_pin is not None:
-            GPIO.output(motor.enable_pin, GPIO.LOW)
-        if motor.ms1_pin is not None:
-            GPIO.output(motor.ms1_pin, GPIO.LOW)
-        if motor.ms2_pin is not None:
-            GPIO.output(motor.ms2_pin, GPIO.LOW)
-        if motor.ms3_pin is not None:
-            GPIO.output(motor.ms3_pin, GPIO.LOW)
+        if GPIO_LIB == 'lgpio':
+            lgpio.gpio_write(motor.gpio_chip, motor.step_pin, 0)
+            lgpio.gpio_write(motor.gpio_chip, motor.dir_pin, 0)
+            if motor.enable_pin is not None:
+                lgpio.gpio_write(motor.gpio_chip, motor.enable_pin, 0)
+            if motor.ms1_pin is not None:
+                lgpio.gpio_write(motor.gpio_chip, motor.ms1_pin, 0)
+            if motor.ms2_pin is not None:
+                lgpio.gpio_write(motor.gpio_chip, motor.ms2_pin, 0)
+            if motor.ms3_pin is not None:
+                lgpio.gpio_write(motor.gpio_chip, motor.ms3_pin, 0)
+        else:
+            GPIO.output(motor.step_pin, GPIO.LOW)
+            GPIO.output(motor.dir_pin, GPIO.LOW)
+            if motor.enable_pin is not None:
+                GPIO.output(motor.enable_pin, GPIO.LOW)
+            if motor.ms1_pin is not None:
+                GPIO.output(motor.ms1_pin, GPIO.LOW)
+            if motor.ms2_pin is not None:
+                GPIO.output(motor.ms2_pin, GPIO.LOW)
+            if motor.ms3_pin is not None:
+                GPIO.output(motor.ms3_pin, GPIO.LOW)
         
         print("Waiting 10 seconds for stabilization...")
         for i in range(10, 0, -1):

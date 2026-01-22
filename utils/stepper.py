@@ -85,7 +85,7 @@ class A4988Stepper:
                 GPIO.setup(self.ms3_pin, GPIO.OUT)
                 GPIO.output(self.ms3_pin, GPIO.LOW)
     
-    def set_microstepping(self, mode='1/16'):
+    def set_microstepping(self, mode='1/14'):
         """
         Set microstepping mode for smoother operation.
         

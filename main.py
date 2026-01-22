@@ -324,10 +324,13 @@ class FireFightingRobot:
         
         return False
     
-    def idle_scan_mode(self):
+    def idle_scan_mode(self, show_preview=False):
         """
         Idle mode: Continuously rotate 360° and scan for fire.
         Collects ALL fires detected during the scan.
+        
+        Args:
+            show_preview: If True, show OpenCV window with live camera feed
         
         Returns:
             list: List of detected fires with angle, confidence info
@@ -341,17 +344,43 @@ class FireFightingRobot:
         
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.detected_fires = []  
-        def check_for_fire():
-            """Callback function to check for fire during rotation"""
+        
+        if show_preview:
+            cv2.namedWindow('Fire Detection - Scanning', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('Fire Detection - Scanning', 800, 600)
+        
+        scan_increment = 10 
+        num_positions = 360 // scan_increment 
+        
+        for position in range(num_positions):
+            current_angle = position * scan_increment
+            
+            if not self.robot_arm:
+                pass
+            
             ret, frame = cap.read()
             if ret:
+                display_frame = frame.copy() if show_preview else None
+                
                 all_detections = self.detect_fire(frame, return_all=True)
                 
                 for detection in all_detections:
                     if detection['confidence'] > 0.25:
-                        current_angle = self.robot_arm.shoulder_angle if self.robot_arm else 0
+                        actual_angle = self.robot_arm.shoulder_angle if self.robot_arm else current_angle
                         angle_offset = self.calculate_target_angle(detection['center_x'], frame_width)
-                        target_angle = (current_angle + angle_offset) % 360
+                        target_angle = (actual_angle + angle_offset) % 360
+                        
+                        if show_preview and display_frame is not None:
+                            bbox = detection['bbox']
+                            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+                            cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                            
+                            label = f"Fire {detection['confidence']:.2%}"
+                            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+                            cv2.rectangle(display_frame, (x1, y1 - label_size[1] - 10), 
+                                        (x1 + label_size[0], y1), (0, 0, 255), -1)
+                            cv2.putText(display_frame, label, (x1, y1 - 5),
+                                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                         
                         if not self.is_fire_already_suppressed(target_angle):
                             already_detected = False
@@ -373,18 +402,27 @@ class FireFightingRobot:
                                     'confidence': detection['confidence']
                                 })
                                 print(f"🔥 Fire #{len(self.detected_fires)} detected at {target_angle:.1f}° (conf: {detection['confidence']:.2%})")
-            return False 
+                
+                if show_preview and display_frame is not None:
+                    # Add status text
+                    display_angle = self.robot_arm.shoulder_angle if self.robot_arm else current_angle
+                    status_text = f"Scanning... Angle: {display_angle:.1f}° | Fires Found: {len(self.detected_fires)}"
+                    cv2.putText(display_frame, status_text, (10, 30),
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    
+                    cv2.imshow('Fire Detection - Scanning', display_frame)
+                    cv2.waitKey(1) 
+            
+            if position < num_positions - 1:
+                if self.robot_arm:
+                    self.robot_arm.rotate_shoulder(scan_increment, clockwise=True, speed=0.015)
+                else:
+                    # Simulation mode - just wait a bit
+                    time.sleep(0.1)
         
-        if self.robot_arm:
-            self.robot_arm.rotate_360_scan(
-                speed=0.03, 
-                stop_callback=check_for_fire
-            )
-        else:
-            print("  (Simulation mode - checking camera frames)")
-            for _ in range(30): 
-                check_for_fire()
-                time.sleep(0.1)
+        # Close preview window
+        if show_preview:
+            cv2.destroyWindow('Fire Detection - Scanning')
         
         cap.release()
         

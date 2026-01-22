@@ -14,11 +14,13 @@ try:
 except (ImportError, NotImplementedError) as e:
     print(f"⚠ Robot Arm not available: {e}")
     ROBOT_ARM_AVAILABLE = False
-    try:
-        from utils.fire_suppression import FireSuppressionSystem
-        FIRE_SUPPRESSION_AVAILABLE = True
-    except (ImportError, NotImplementedError):
-        FIRE_SUPPRESSION_AVAILABLE = False
+
+try:
+    from utils.fire_suppression import FireSuppressionSystem
+    FIRE_SUPPRESSION_AVAILABLE = True
+except (ImportError, NotImplementedError) as e:
+    print(f"⚠ Fire Suppression not available: {e}")
+    FIRE_SUPPRESSION_AVAILABLE = False
 
 
 class FireFightingRobot:

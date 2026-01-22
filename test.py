@@ -57,6 +57,21 @@ def test_stepper_module():
     print("=======================\n")
 
 
+def test_pump_module():
+    """Test Water Pump module"""
+    print("\n=== Testing Water Pump ===")
+    try:
+        from utils.pump import WaterPump
+        pump = WaterPump(relay_pin=18)
+        print("Testing pump pulse (1 second)...")
+        pump.pulse(duration=1.0)
+        pump.cleanup()
+        print("✓ Water Pump OK")
+    except Exception as e:
+        print(f"✗ Water Pump: {e}")
+    print("==========================\n")
+
+
 def test_camera_module():
     """Test Camera module"""
     print("\n=== Testing Camera ===")
@@ -71,6 +86,7 @@ def test_all():
     test_audio_module()
     test_servo_module()
     test_stepper_module()
+    test_pump_module()
     test_camera_module()
     print("===========================\n")
 
@@ -84,8 +100,9 @@ def display_menu():
     print("║ 2. Test Audio                  ║")
     print("║ 3. Test Servo                  ║")
     print("║ 4. Test Stepper                ║")
-    print("║ 5. Test Camera                 ║")
-    print("║ 6. Test All Modules            ║")
+    print("║ 5. Test Water Pump             ║")
+    print("║ 6. Test Camera                 ║")
+    print("║ 7. Test All Modules            ║")
     print("║ 0. Exit                        ║")
     print("╚════════════════════════════════╝")
 
@@ -94,7 +111,7 @@ def main():
     """Main test loop"""
     while True:
         display_menu()
-        choice = input("\nSelect test option (0-6): ").strip()
+        choice = input("\nSelect test option (0-7): ").strip()
         
         if choice == '1':
             test_sim800l()
@@ -105,14 +122,16 @@ def main():
         elif choice == '4':
             test_stepper_module()
         elif choice == '5':
-            test_camera_module()
+            test_pump_module()
         elif choice == '6':
+            test_camera_module()
+        elif choice == '7':
             test_all()
         elif choice == '0':
             print("\nExiting test program. Goodbye!")
             break
         else:
-            print("\n✗ Invalid option. Please select 0-6.")
+            print("\n✗ Invalid option. Please select 0-7.")
 
 
 if __name__ == "__main__":

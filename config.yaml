@@ -3,9 +3,9 @@
 
 # Stepper Motor (Base Rotation)
 stepper:
-  step_pin: 17
-  dir_pin: 18
-  enable_pin: 27
+  step_pin: 24
+  dir_pin: 23
+  enable_pin: 25
   steps_per_revolution: 200  # NEMA17 typical
   microsteps: 16  # A4988 microstep setting
   rpm: 10  # Scanning rotation speed
@@ -53,7 +53,7 @@ audio:
 
 # Water Pump (Relay)
 water:
-  relay_pin: 22
+  relay_pin: 18
   spray_duration: 3  # Seconds per spray
   max_attempts: 3  # Maximum water spray attempts
   cooldown: 1  # Seconds between sprays

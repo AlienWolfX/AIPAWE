@@ -51,10 +51,8 @@ class FireFightingRobot:
         status = {
             'sim800l': False,
             'sim800l_imei': None,
-            'audio': False,
             'servo': False,
             'stepper': False,
-            'pump': False,
             'camera': False,
             'yolo': False
         }
@@ -80,17 +78,6 @@ class FireFightingRobot:
                 print("✗ SIM800L: Failed")
         except Exception as e:
             print(f"✗ SIM800L: {e}")
-        
-        # Check Audio
-        print("Checking Audio...")
-        try:
-            from utils.audio import TPA3116D2Audio
-            audio_test = TPA3116D2Audio()
-            audio_test.close()
-            status['audio'] = True
-            print("✓ Audio OK")
-        except Exception as e:
-            print(f"✗ Audio: {e}")
         
         # Check Servo
         print("Checking Servo...")
@@ -120,20 +107,6 @@ class FireFightingRobot:
                 print("⚠ Stepper: Not on Raspberry Pi")
         except Exception as e:
             print(f"✗ Stepper: {e}")
-        
-        # Check Water Pump
-        print("Checking Water Pump...")
-        try:
-            if FIRE_SUPPRESSION_AVAILABLE:
-                from utils.pump import WaterPump
-                pump = WaterPump(relay_pin=18)
-                pump.cleanup()
-                status['pump'] = True
-                print("✓ Water Pump OK")
-            else:
-                print("⚠ Water Pump: Not on Raspberry Pi")
-        except Exception as e:
-            print(f"✗ Water Pump: {e}")
         
         # Check Camera
         print("Checking Camera...")
@@ -195,17 +168,14 @@ class FireFightingRobot:
             else:
                 print("✗ Cannot initialize robot arm - servo/stepper failed")
         
-        if FIRE_SUPPRESSION_AVAILABLE and self.status['audio'] and self.status['pump']:
+        if FIRE_SUPPRESSION_AVAILABLE:
             try:
                 self.suppression_system = FireSuppressionSystem()
                 print("✓ Fire suppression system ready")
             except Exception as e:
                 print(f"✗ Fire suppression initialization failed: {e}")
         else:
-            if not FIRE_SUPPRESSION_AVAILABLE:
-                print("✗ Fire suppression module not available (not on Raspberry Pi)")
-            else:
-                print("✗ Cannot initialize suppression system - audio/pump failed")
+            print("✗ Fire suppression module not available (not on Raspberry Pi)")
         
         if self.status['yolo']:
             model_path = self._get_model_path()

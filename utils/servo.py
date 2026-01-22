@@ -169,29 +169,36 @@ if __name__ == "__main__":
     servo_controller = PCA9685ServoController(channels=16)
     
     try:
-        print("Testing servo on channel 0...")
+        print("Testing servos on channels 0-3...\n")
         
-        print("Moving to center (90°)")
-        servo_controller.set_angle(0, 90)
-        time.sleep(1)
+        for channel in range(4):
+            print(f"\n=== Testing Channel {channel} ===")
+            
+            print("Moving to center (90°)")
+            servo_controller.set_angle(channel, 90)
+            time.sleep(1)
+            
+            print("Moving to 0°")
+            servo_controller.set_angle(channel, 0)
+            time.sleep(1)
+            
+            print("Moving to 180°")
+            servo_controller.set_angle(channel, 180)
+            time.sleep(1)
+            
+            print("Sweeping from 0 to 180")
+            servo_controller.sweep(channel, 0, 180, step=5, delay=0.02)
+            time.sleep(0.5)
+            
+            print("Sweeping from 180 to 0")
+            servo_controller.sweep(channel, 180, 0, step=5, delay=0.02)
+            
+            servo_controller.center(channel)
+            time.sleep(1)
+            
+            print(f"Channel {channel} test complete")
         
-        print("Moving to 0°")
-        servo_controller.set_angle(0, 0)
-        time.sleep(1)
-        
-        print("Moving to 180°")
-        servo_controller.set_angle(0, 180)
-        time.sleep(1)
-        
-        print("Sweeping from 0 to 180")
-        servo_controller.sweep(0, 0, 180, step=5, delay=0.02)
-        time.sleep(0.5)
-        
-        print("Sweeping from 180 to 0")
-        servo_controller.sweep(0, 180, 0, step=5, delay=0.02)
-        
-        servo_controller.center(0)
-        time.sleep(1)
+        print("\nAll tests complete!")
         
     except KeyboardInterrupt:
         print("\nStopped by user")

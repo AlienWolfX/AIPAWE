@@ -296,13 +296,14 @@ class FireFightingRobot:
         
         return False
     
-    def idle_scan_mode(self, show_preview=False):
+    def idle_scan_mode(self, show_preview=False, stop_on_first_fire=True):
         """
         Idle mode: Continuously rotate 360° and scan for fire.
         Collects ALL fires detected during the scan.
         
         Args:
             show_preview: If True, show OpenCV window with live camera feed
+            stop_on_first_fire: If True, stop scanning immediately when first fire is detected
         
         Returns:
             list: List of detected fires with angle, confidence info
@@ -373,6 +374,20 @@ class FireFightingRobot:
                                     'angle': target_angle,
                                     'confidence': detection['confidence']
                                 })
+                                
+                                # Stop immediately if configured to do so
+                                if stop_on_first_fire:
+                                    print(f"\n⚠ FIRE DETECTED! Stopping scan immediately.")
+                                    print(f"   Position: {target_angle:.1f}°")
+                                    print(f"   Confidence: {detection['confidence']:.1%}\n")
+                                    
+                                    # Close preview and camera
+                                    if show_preview:
+                                        cv2.destroyWindow('Fire Detection - Scanning')
+                                    cap.release()
+                                    
+                                    # Return immediately with detected fire
+                                    return self.detected_fires
                                 print(f"🔥 Fire #{len(self.detected_fires)} detected at {target_angle:.1f}° (conf: {detection['confidence']:.2%})")
                 
                 if show_preview and display_frame is not None:

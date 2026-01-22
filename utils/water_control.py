@@ -36,8 +36,8 @@ class WaterPump:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.relay_pin, GPIO.OUT)
         
-        # Ensure pump is off initially (relay HIGH = off for most relay modules)
-        GPIO.output(self.relay_pin, GPIO.HIGH)
+        # Ensure pump is off initially (relay LOW = off)
+        GPIO.output(self.relay_pin, GPIO.LOW)
     
     def start_spray(self, duration: float = None, blocking: bool = True) -> bool:
         """
@@ -78,8 +78,8 @@ class WaterPump:
     def _spray_sequence(self, duration: float):
         """Internal spray sequence"""
         try:
-            # Activate relay (LOW = on for most relay modules)
-            GPIO.output(self.relay_pin, GPIO.LOW)
+            # Activate relay (HIGH = on)
+            GPIO.output(self.relay_pin, GPIO.HIGH)
             self.is_spraying = True
             
             # Spray for specified duration
@@ -89,8 +89,8 @@ class WaterPump:
                     break
                 time.sleep(0.1)
             
-            # Deactivate relay
-            GPIO.output(self.relay_pin, GPIO.HIGH)
+            # Deactivate relay (LOW = off)
+            GPIO.output(self.relay_pin, GPIO.LOW)
             self.is_spraying = False
             
             self.logger.log_hardware_action("WaterPump", "SPRAY_STOP")
@@ -101,7 +101,7 @@ class WaterPump:
                 
         except Exception as e:
             self.logger.error(f"Water pump error: {e}")
-            GPIO.output(self.relay_pin, GPIO.HIGH)  # Ensure pump is off
+            GPIO.output(self.relay_pin, GPIO.LOW)  # Ensure pump is off
             self.is_spraying = False
     
     def stop(self):
@@ -110,7 +110,7 @@ class WaterPump:
             self.stop_spray.set()
             if self.spray_thread:
                 self.spray_thread.join(timeout=1.0)
-            GPIO.output(self.relay_pin, GPIO.HIGH)
+            GPIO.output(self.relay_pin, GPIO.LOW)
             self.is_spraying = False
             self.logger.log_hardware_action("WaterPump", "EMERGENCY_STOP")
     
@@ -133,9 +133,9 @@ class WaterPump:
             if self.stop_spray.is_set():
                 break
             
-            GPIO.output(self.relay_pin, GPIO.LOW)
-            time.sleep(pulse_duration)
             GPIO.output(self.relay_pin, GPIO.HIGH)
+            time.sleep(pulse_duration)
+            GPIO.output(self.relay_pin, GPIO.LOW)
             
             if i < pulses - 1:  # Don't delay after last pulse
                 time.sleep(pulse_interval)

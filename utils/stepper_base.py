@@ -6,24 +6,7 @@ Controls NEMA17 stepper motor via A4988 driver for 360° base rotation
 import time
 import threading
 from typing import Optional
-try:
-    import RPi.GPIO as GPIO
-except ImportError:
-    # Mock GPIO for development on non-RPi systems
-    class MockGPIO:
-        BCM = "BCM"
-        OUT = "OUT"
-        HIGH = 1
-        LOW = 0
-        @staticmethod
-        def setmode(mode): pass
-        @staticmethod
-        def setup(pin, mode): pass
-        @staticmethod
-        def output(pin, state): pass
-        @staticmethod
-        def cleanup(): pass
-    GPIO = MockGPIO()
+from utils.gpio_adapter import gpio as GPIO
 
 
 class StepperBase:

@@ -121,7 +121,7 @@ class RateLimiter:
 def safe_gpio_cleanup():
     """Safely cleanup GPIO on exit"""
     try:
-        import RPi.GPIO as GPIO
+        from utils.gpio_adapter import gpio as GPIO
         GPIO.cleanup()
     except:
         pass

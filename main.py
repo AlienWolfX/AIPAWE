@@ -45,6 +45,10 @@ class AIPAWE:
         print("AIPAWE - AI-Powered Automated Water Extinguisher")
         print("=" * 60)
         
+        # Detect GPIO library
+        from utils.gpio_adapter import gpio as GPIO
+        print(f"GPIO Library: {GPIO.get_library_name()}")
+        
         # Load configuration
         self.config = ConfigLoader(config_path)
         

@@ -176,13 +176,17 @@ class StateMachine:
         
         self.current_target = self.target_queue.popleft()
         
+        self.logger.info(f"Target acquired: Sector={self.current_target.sector:.1f}° Az={self.current_target.azimuth:.1f}° El={self.current_target.elevation:.1f}° Conf={self.current_target.confidence:.2%}")
+        
         # Calculate absolute azimuth (base angle + relative azimuth)
         target_azimuth = (self.current_target.sector + self.current_target.azimuth) % 360
         
         # Rotate base to target
+        self.logger.info(f"Rotating base to {target_azimuth:.1f}°")
         self.stepper.rotate_to_angle(target_azimuth)
         
         # Aim arm at elevation
+        self.logger.info(f"Aiming arm: azimuth={self.current_target.azimuth:.1f}° elevation={self.current_target.elevation:.1f}°")
         self.servo.aim_at_target(
             self.current_target.azimuth,
             self.current_target.elevation,

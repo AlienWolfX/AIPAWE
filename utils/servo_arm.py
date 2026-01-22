@@ -145,14 +145,20 @@ class ServoArm:
             elevation: Vertical angle (mapped to elbow/wrist)
             smooth: Use smooth movement
         """
+        self.logger.info(f"aim_at_target called: azimuth={azimuth:.1f}° elevation={elevation:.1f}° smooth={smooth}")
+        
         # Simple inverse kinematics - distribute elevation between elbow and wrist
         # This is a simplified model; adjust based on actual arm geometry
         elbow_target = self.elbow_neutral - (elevation * 0.6)
         wrist_target = self.wrist_neutral - (elevation * 0.4)
         
+        self.logger.info(f"Calculated targets: elbow={elbow_target:.1f}° wrist={wrist_target:.1f}°")
+        
         # Clamp to safe limits
         elbow_target = clamp(elbow_target, self.elbow_min_angle, self.elbow_max_angle)
         wrist_target = clamp(wrist_target, self.wrist_min_angle, self.wrist_max_angle)
+        
+        self.logger.info(f"Clamped targets: elbow={elbow_target:.1f}° wrist={wrist_target:.1f}°")
         
         self.set_elbow_angle(elbow_target, smooth)
         self.set_wrist_angle(wrist_target, smooth)

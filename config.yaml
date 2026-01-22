@@ -8,7 +8,7 @@ stepper:
   enable_pin: 25
   steps_per_revolution: 200  # NEMA17 typical
   microsteps: 16  # A4988 microstep setting
-  rpm: 10  # Scanning rotation speed
+  rpm: 3  # Scanning rotation speed
   sector_size: 15  # Degrees per scan sector
   acceleration: 500  # Steps/s^2
 
@@ -38,8 +38,8 @@ detection:
   input_size: 640  # YOLO input resolution
   device: "cpu"  # "cpu" or "cuda" if available
   camera_index: 0  # USB camera index
-  frame_width: 640
-  frame_height: 480
+  frame_width: 320
+  frame_height: 240
   fps: 15  # Camera frame rate
 
 # Audio Suppression (ALSA)

@@ -2,6 +2,7 @@
 
 utils/__pycache__/*
 .venv/*
+logs/*
 
 # Files
 

@@ -34,7 +34,7 @@ servo:
 # Fire Detection (YOLOv11)
 detection:
   model_path: "model/weights/v1.pt"
-  confidence_threshold: 0.65  # Minimum confidence to trigger
+  confidence_threshold: 0.25  # Minimum confidence to trigger
   input_size: 640  # YOLO input resolution
   device: "cpu"  # "cpu" or "cuda" if available
   camera_index: 0  # USB camera index

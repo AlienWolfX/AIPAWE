@@ -1,11 +1,24 @@
-import RPi.GPIO as GPIO
 import time
+
+# Try to import GPIO libraries - Raspberry Pi 5 uses lgpio, older models use RPi.GPIO
+try:
+    import lgpio
+    GPIO_LIB = 'lgpio'
+    print("Using lgpio for Raspberry Pi 5")
+except ImportError:
+    try:
+        import RPi.GPIO as GPIO
+        GPIO_LIB = 'RPi.GPIO'
+        print("Using RPi.GPIO for Raspberry Pi 4 or earlier")
+    except ImportError:
+        raise NotImplementedError("No GPIO library available - must run on Raspberry Pi")
 
 
 class WaterPump:
     """
     Water pump controller using GPIO relay module.
     Controls a 12V DC water pump via relay for fire suppression.
+    Compatible with both Raspberry Pi 4 (RPi.GPIO) and Raspberry Pi 5 (lgpio).
     """
     
     def __init__(self, relay_pin=18):
@@ -18,24 +31,36 @@ class WaterPump:
         self.relay_pin = relay_pin
         self.is_running = False
         
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.relay_pin, GPIO.OUT)
-        GPIO.output(self.relay_pin, GPIO.LOW)  
+        if GPIO_LIB == 'lgpio':
+            # Raspberry Pi 5 using lgpio
+            self.gpio_chip = lgpio.gpiochip_open(4)  # gpiochip4 on Pi 5
+            lgpio.gpio_claim_output(self.gpio_chip, self.relay_pin, 0)  # Start LOW
+        else:
+            # Raspberry Pi 4 or earlier using RPi.GPIO
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setwarnings(False)
+            GPIO.setup(self.relay_pin, GPIO.OUT)
+            GPIO.output(self.relay_pin, GPIO.LOW)
         
-        print(f"Water pump initialized on GPIO pin {relay_pin}")
+        print(f"Water pump initialized on GPIO pin {relay_pin} using {GPIO_LIB}")
     
     def start(self):
         """Start the water pump"""
         if not self.is_running:
-            GPIO.output(self.relay_pin, GPIO.HIGH)
+            if GPIO_LIB == 'lgpio':
+                lgpio.gpio_write(self.gpio_chip, self.relay_pin, 1)
+            else:
+                GPIO.output(self.relay_pin, GPIO.HIGH)
             self.is_running = True
             print("Water pump STARTED")
     
     def stop(self):
         """Stop the water pump"""
         if self.is_running:
-            GPIO.output(self.relay_pin, GPIO.LOW)
+            if GPIO_LIB == 'lgpio':
+                lgpio.gpio_write(self.gpio_chip, self.relay_pin, 0)
+            else:
+                GPIO.output(self.relay_pin, GPIO.LOW)
             self.is_running = False
             print("Water pump STOPPED")
     
@@ -70,7 +95,11 @@ class WaterPump:
     def cleanup(self):
         """Clean up GPIO resources"""
         self.stop()
-        GPIO.cleanup(self.relay_pin)
+        if GPIO_LIB == 'lgpio':
+            lgpio.gpio_free(self.gpio_chip, self.relay_pin)
+            lgpio.gpiochip_close(self.gpio_chip)
+        else:
+            GPIO.cleanup(self.relay_pin)
         print("Water pump cleanup complete")
 
 

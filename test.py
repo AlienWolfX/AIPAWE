@@ -39,6 +39,8 @@ def test_servo_module():
         servo.disable_all()
         servo.deinit()
         print("✓ Servo OK")
+    except NotImplementedError:
+        print("⚠ Servo: Not on Raspberry Pi")
     except Exception as e:
         print(f"✗ Servo: {e}")
     print("=====================\n")
@@ -52,6 +54,8 @@ def test_stepper_module():
         stepper = A4988Stepper()
         stepper.cleanup()
         print("✓ Stepper OK")
+    except NotImplementedError:
+        print("⚠ Stepper: Not on Raspberry Pi")
     except Exception as e:
         print(f"✗ Stepper: {e}")
     print("=======================\n")
@@ -67,6 +71,8 @@ def test_pump_module():
         pump.pulse(duration=1.0)
         pump.cleanup()
         print("✓ Water Pump OK")
+    except NotImplementedError as e:
+        print(f"⚠ Water Pump: Not on Raspberry Pi")
     except Exception as e:
         print(f"✗ Water Pump: {e}")
     print("==========================\n")

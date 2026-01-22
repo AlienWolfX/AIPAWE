@@ -1,0 +1,95 @@
+# AIPAWE - AI-Powered Automated Water Extinguisher
+# Hot-reloadable configuration file
+
+# Stepper Motor (Base Rotation)
+stepper:
+  step_pin: 17
+  dir_pin: 18
+  enable_pin: 27
+  steps_per_revolution: 200  # NEMA17 typical
+  microsteps: 16  # A4988 microstep setting
+  rpm: 10  # Scanning rotation speed
+  sector_size: 15  # Degrees per scan sector
+  acceleration: 500  # Steps/s^2
+
+# Servo Arm (PCA9685)
+servo:
+  i2c_address: 0x40
+  frequency: 50  # PWM frequency in Hz
+  elbow:
+    channel: 0
+    min_pulse: 500  # Microseconds
+    max_pulse: 2500
+    min_angle: 0
+    max_angle: 180
+    neutral_angle: 90  # Ceiling-mounted neutral position
+  wrist:
+    channel: 1
+    min_pulse: 500
+    max_pulse: 2500
+    min_angle: 0
+    max_angle: 180
+    neutral_angle: 90
+
+# Fire Detection (YOLOv11)
+detection:
+  model_path: "model/weights/v1.pt"
+  confidence_threshold: 0.65  # Minimum confidence to trigger
+  input_size: 640  # YOLO input resolution
+  device: "cpu"  # "cpu" or "cuda" if available
+  camera_index: 0  # USB camera index
+  frame_width: 640
+  frame_height: 480
+  fps: 15  # Camera frame rate
+
+# Audio Suppression (ALSA)
+audio:
+  device: "plughw:1,0"  # ALSA device identifier
+  frequency: 30  # Low-frequency Hz for fire suppression
+  duration: 5  # Seconds per attempt
+  amplitude: 0.8  # 0.0 to 1.0
+  sample_rate: 44100
+  max_attempts: 2  # Maximum sound suppression attempts
+
+# Water Pump (Relay)
+water:
+  relay_pin: 22
+  spray_duration: 3  # Seconds per spray
+  max_attempts: 3  # Maximum water spray attempts
+  cooldown: 1  # Seconds between sprays
+
+# GSM Module (SIM800L)
+gsm:
+  serial_port: "/dev/ttyAMA0"
+  baud_rate: 9600
+  timeout: 5
+  phone_numbers: 
+    - "+1234567890"
+    - "+0987654321"
+  messages:
+    fire_detected: "Fire detected at sector {sector}° - AIPAWE responding"
+    fire_suppressed: "Fire suppressed successfully using {method} at sector {sector}°"
+    suppression_failed: "Suppression failed after {attempts} attempts at sector {sector}° - manual intervention required"
+
+# State Machine
+state_machine:
+  verify_delay: 2  # Seconds to wait before verification
+  return_delay: 1  # Seconds before returning to scan
+  max_queue_size: 10  # Maximum queued fire targets
+  watchdog_timeout: 300  # Seconds - force return to SCAN if stuck
+
+# Safety & Limits
+safety:
+  min_confidence: 0.5  # Absolute minimum to consider
+  max_total_attempts: 5  # Total sound + water attempts
+  interlock_delay: 0.5  # Seconds between sound/water to prevent overlap
+  emergency_stop_pin: 23  # GPIO pin for manual emergency stop
+  temperature_limit: 60  # Celsius - system overheat protection
+
+# Logging
+logging:
+  log_file: "logs/aipawe.log"
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  max_log_size: 10485760  # 10 MB
+  backup_count: 5
+  console_output: true
